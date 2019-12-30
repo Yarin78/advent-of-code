@@ -1,0 +1,34 @@
+#ip 2
+0: seti 123 0 3  # D = 123
+1: bani 3 456 3  # D &= 456
+2: eqri 3 72 3   # D = 1 IF D = 72
+3: addr 3 2 2    # IF D == 0:
+4: seti 0 0 2    #   JP 1
+5: seti 0 6 3    # D = 0
+6: bori 3 65536 4 # E = D | 65536
+7: seti 7041048 8 3  # D = 7041048
+8: bani 4 255 5    # F = E & 255
+9: addr 3 5 3      # D = D + F
+10: bani 3 16777215 3  # D = D & 16777215
+11: muli 3 65899 3     # D = D * 65899
+12: bani 3 16777215 3  # D = D & 16777215
+13: gtir 256 4 5  # F = 1 IF 256 > E ELSE F = 0
+14: addr 5 2 2  # IF F = 1 JP 16
+15: addi 2 1 2  # JP 17
+16: seti 27 6 2   # JP 28
+17: seti 0 1 5    # E = 0
+18: addi 5 1 1   # B = F + 1
+19: muli 1 256 1 # B *= 256
+20: gtrr 1 4 1  # If B > E JP 26 ELSE JP 24  #  B = 1 IF B > E else 0
+21: addr 1 2 2  # JR B   (if B = 0, JP 22, if B = 1, JP 23)
+22: addi 2 1 2  # JP 24
+23: seti 25 1 2  # JP 26
+24: addi 5 1 5  # F = F + 1
+25: seti 17 8 2  # JP 18
+26: setr 5 2 4  # E = F
+27: seti 7 9 2  # JP 8
+28: eqrr 3 0 5  # IF A == D THEN HALT  #F = 1 IF A == D else F = 0
+29: addr 5 2 2  # NOP if F = 1 HALT
+30: seti 5 3 2  # JP 6
+
+#51  249 138 0
