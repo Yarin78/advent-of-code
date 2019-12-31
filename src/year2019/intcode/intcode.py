@@ -26,6 +26,7 @@ OPCODE_JUMP_FALSE = 6  # if x=0 then jump y
 OPCODE_LESS_THAN = 7   # z = x < y ? 1 : 0
 OPCODE_EQUALS = 8      # z = x == y ? 1 : 0
 OPCODE_ADD_BP = 9      # bp += x
+OPCODE_DEBUG = 10      # outputs x
 OPCODE_HALT = 99
 
 class Program(object):
@@ -304,6 +305,8 @@ class Program(object):
             code = 'self.base_ptr += %s' % params[0]
         elif opcode == OPCODE_HALT:
             code = 'self.halted = True\nreturn'
+        elif opcode == OPCODE_DEBUG:
+            code = '# debug %s' % params[0]
 
         return (mnemonic, code)
 
@@ -406,6 +409,9 @@ class Program(object):
         self.halted = True
         return self.ip
 
+    def opcode_debug(self, x):
+        print('DEBUG', x)
+
     # (function, mnemonic, length, lvalue param)
     # If a function has a variable number of parameters, set length=1
     # and parse the params manually in the instruction
@@ -419,6 +425,7 @@ class Program(object):
         OPCODE_LESS_THAN: (opcode_less_than, 'LT', 4, 3),
         OPCODE_EQUALS: (opcode_equals, 'EQ', 4, 3),
         OPCODE_ADD_BP: (opcode_add_bp, 'ADD_BP', 2, -1),
+        OPCODE_DEBUG: (opcode_debug, 'DEBUG', 2, -1),
 
         OPCODE_HALT: (opcode_exit, 'HALT', 1, -1),
     }
