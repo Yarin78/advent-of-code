@@ -9,7 +9,7 @@ from vm.vm import *
 from aocd import data, submit
 
 # Make sure ~/.config/aocd/token is correct! (Chrome inspector -> Application tab -> Cookies)
-lines = data.strip().split('\n')
+lines = [line.strip() for line in sys.stdin.readlines()]
 #with open("day8-sample.in", "r") as f:
 #    lines = f.readlines()
 
