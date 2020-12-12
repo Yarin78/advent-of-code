@@ -11,7 +11,7 @@ from vm.vm import *
 lines = [line.strip() for line in sys.stdin.readlines()]
 # prog = Program(lines)
 
-# intlines = [int(x) for x in lines]
-ans = ans2 = 0
+# data = [int(x) for x in lines]
+ans = 0
 
 print(ans)
