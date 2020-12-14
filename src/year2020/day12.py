@@ -21,12 +21,9 @@ def part1(lines):
         if d == 'F':
             cur += dir*steps
         elif d in 'LR':
-            c = steps//90
             if d == 'R':
-                c = 4-c
-            while c > 0:
-                dir = Point(-dir.y, dir.x)
-                c -= 1
+                steps = 360-steps
+            dir = dir.rotate_deg(steps).intify()
         else:
             cur += DIRS[d] * steps
 
@@ -42,12 +39,9 @@ def part2(lines):
         if d == 'F':
             cur += wp*steps
         elif d in 'LR':
-            c = steps//90
             if d == 'R':
-                c = 4-c
-            while c > 0:
-                wp = Point(-wp.y, wp.x)
-                c -= 1
+                steps = 360-steps
+            wp = wp.rotate_deg(steps).intify()
         else:
             wp += DIRS[d] * steps
 
