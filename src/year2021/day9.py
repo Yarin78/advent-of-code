@@ -18,24 +18,15 @@ def _is_edge(p1, c1, p2, c2):
 
 graph = grid_graph(grid, _is_node, _is_edge)
 
-tot = 0
-sizes = []
-for y in range(ysize):
-    for x in range(xsize):
-        is_low = True
-        for d in DIRECTIONS:
-            nx = x+ d.x
-            ny = y+d.y
-            if within_grid(grid, Point(nx, ny)):
-                if grid[y][x] >= grid[ny][nx]:
-                    is_low=False
-        if is_low:
-            risk = int(grid[y][x])+1
-            tot+=risk
+tot_risk = 0
+basins = []
+for p in grid_points(grid):
+    if all(grid_get(grid, p) < grid_get(grid, q) for q in grid_neighbors(grid, p)):
+        tot_risk += int(grid_get(grid, p))+1
 
-            res = bfs(graph, Point(x,y))
-            sizes.append(len(res))
+        res = bfs(graph, p)
+        basins.append(len(res))
 
-print(tot)
-sizes.sort()
-print(sizes[-1]*sizes[-2]*sizes[-3])
+print(tot_risk)
+basins.sort()
+print(basins[-1]*basins[-2]*basins[-3])
