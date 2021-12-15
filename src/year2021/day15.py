@@ -15,15 +15,7 @@ def solve(data, exp):
     map = []
     for tiley in range(exp):
         for y in range(ysize):
-            cur = ""
-            for tilex in range(exp):
-                for x in range(xsize):
-                    v = int(lines[y][x])
-                    v = v + tiley+tilex
-                    while v > 9:
-                        v -= 9
-                    cur += str(v)
-            map.append(cur)
+            map.append("".join(str((int(lines[y][x])+tiley+tilex-1)%9+1) for tilex in range(exp) for x in range(xsize)))
 
     (grid, xsize, ysize) = read_grid(map)
 
@@ -35,10 +27,7 @@ def solve(data, exp):
 
     g = grid_graph(grid, _get_node, _get_edge, uni_distance=False)
 
-    res = dijkstra(g, Point(0,0))
-
-    return(res[Point(xsize-1,ysize-1)])
-
+    return dijkstra(g, Point(0,0))[Point(xsize-1,ysize-1)]
 
 lines = [line.strip() for line in sys.stdin.readlines()]
 
