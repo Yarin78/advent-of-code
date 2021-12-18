@@ -1,12 +1,5 @@
 import sys
-from queue import Queue
-from collections import defaultdict
-from itertools import permutations
-from yal.io import *
-from yal.util import *
-from yal.grid import *
-from yal.graph import *
-from yal.geo2d import *
+from typing import Optional, Tuple
 
 lines = [line.strip() for line in sys.stdin.readlines()]
 
