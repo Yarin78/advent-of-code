@@ -22,33 +22,28 @@ for line in lines:
 
 scanners.append(cur)
 
-def rotations(points: List[Point]) -> Iterable[List[Point]]:
-    for perm in itertools.permutations(range(3)):
-        for facing in range(8):
-            cur = []
-            for p in points:
-                c = [p.x, p.y, p.z]
-                d = [c[perm[0]], c[perm[1]], c[perm[2]]]
-                for i in range(3):
-                    if (2**i & facing) > 0:
-                        d[i]=-d[i]
-                cur.append(Point(d[0], d[1], d[2]))
-            yield cur
+def rotations(points: List[Point]) -> List[List[Point]]:
+    return transpose_matrix([p.rotations() for p in points])
 
 n = len(scanners)
 
 
 def overlaps(scanner1: List[Point], scanner2: List[Point]) -> Optional[Point]:
     delta_cnt = defaultdict(int)
-    poss_deltas = set()
+    # This may overcount
     for p0 in scanner1:
         for p1 in scanner2:
-            poss_deltas.add(p1-p0)
             delta_cnt[p1-p0] += 1
 
     for delta, cnt in delta_cnt.items():
         if cnt >= MIN_COMMON:
-            return delta
+            actual_cnt = 0
+            for p0 in scanner1:
+                if p0+delta in scanner2:
+                    actual_cnt += 1
+
+            if actual_cnt >= MIN_COMMON:
+                return delta
 
     return None
 
