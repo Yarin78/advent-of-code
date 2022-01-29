@@ -3,6 +3,8 @@ import sys
 import heapq
 from typing import Tuple, List
 
+from yal.graph import dijkstra2
+
 MAX_ROOM_Y = 3
 
 @dataclass(frozen=True, eq=True)
@@ -12,11 +14,12 @@ class Pos:
     roomy: int  # 0-3, 0=closest to hallway
 
     def __lt__(self, other):
+        # Ensure further down comes first
+        if self.roomy != other.roomy:
+            return self.roomy > other.roomy
         if self.hallx != other.hallx:
             return self.hallx < other.hallx
-        if self.roomx != other.roomx:
-            return self.roomx < other.roomx
-        return self.roomy < other.roomy
+        return self.roomx < other.roomx
 
     def state(self):
         if self.hallx >= 0:
@@ -113,12 +116,22 @@ class State:
 
     def approx(self):
         cost = 0
+        ap_left = {0: 3, 1: 3, 2: 3, 3: 3}
         for ap in self.amp_pos:
             if ap.pos.roomx >= 0:
-                xdif = abs(ap.amp - ap.pos.roomx) * 2
+                xdif = abs(ap.amp - ap.pos.roomx) * 2                
             else:
                 xdif = abs(room_to_hallx(ap.amp) - ap.pos.hallx)
             cost += xdif * amp_move_cost(ap.amp)
+
+            if ap.amp == ap.pos.roomx:
+                if ap.pos.roomy == ap_left[ap.amp]:
+                    ap_left[ap.amp] -= 1
+
+        for amp, left in ap_left.items():            
+            moves = (left+1)*(left+2)//2
+            cost += amp_move_cost(amp) * moves
+            
         return cost
 
     def neighbors(self) -> List[Tuple["State", int]]:
@@ -173,31 +186,38 @@ def parse_input(lines):
     return State(d)
 
 
-def search(start: State):
-    dist = {}
-    q = []
+# def search(start: State):
+#     dist = {}
+#     q = []
 
-    def add(node: State, d: int):
-        nonlocal dist, q
-        node_encoded = node.encode()
-        if node_encoded not in dist or d < dist[node_encoded]:
-            dist[node_encoded] = d            
-            heapq.heappush(q, (d+node.approx(), d, node))
+#     def add(node: State, d: int):
+#         nonlocal dist, q
+#         node_encoded = node.encode()
+#         if node_encoded not in dist or d < dist[node_encoded]:
+#             dist[node_encoded] = d            
+#             heapq.heappush(q, (d+node.approx(), d, node))
 
-    add(start, 0)
-    while len(q):
-        (_, cur_dist, cur) = heapq.heappop(q)
-        if cur.is_done():
-            print("Num states", len(dist))
-            return cur_dist
-        if cur_dist == dist[cur.encode()]:
-            for x, d in cur.neighbors():
-                add(x, cur_dist + d)
-
-
-
+#     visited = 0
+#     add(start, 0)
+#     while len(q):
+#         visited += 1
+#         (_, cur_dist, cur) = heapq.heappop(q)
+#         if cur.is_done():
+#             print("Num states visited", visited)
+#             print("Num states stored", len(dist))
+#             return cur_dist
+#         if cur_dist == dist[cur.encode()]:            
+#             for x, d in cur.neighbors():
+#                 add(x, cur_dist + d)
+    
 lines = [line.strip() for line in sys.stdin.readlines()]
 
 start = parse_input(lines)
 
-print("total cost", search(start))
+#print("total cost", search(start))
+print("cost", dijkstra2(
+        start, 
+        lambda cur: cur.neighbors(), 
+        done_func=lambda cur: cur.is_done(), 
+        hash_func=lambda cur: cur.encode(),
+        approx_func=lambda cur: cur.approx()))

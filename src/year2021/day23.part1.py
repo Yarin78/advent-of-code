@@ -233,7 +233,7 @@ def debug(start: State):
         state.show()
         print()
 
-
-print("total cost", search(start))
+print("cost", dijkstra2(start, lambda cur: cur.neighbors(), done_func=lambda cur: cur.is_done()))
+#print("total cost", search(start))
 
 #debug(start)
