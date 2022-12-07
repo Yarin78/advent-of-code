@@ -4,7 +4,7 @@ from collections import defaultdict
 from itertools import permutations
 from yal.io import *
 from yal.util import *
-from yal.grid_old import *
+from yal.grid import *
 from yal.graph import *
 from yal.geo2d import *
 
@@ -41,6 +41,4 @@ for line in lines:
 print(len(dots))
 
 v = {x:'#' for x in dots}
-s = gridify_sparse_map(v)
-for line in s:
-    print(line)
+Grid.from_sparse_map(v).show()

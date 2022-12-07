@@ -4,7 +4,7 @@ from collections import defaultdict
 from itertools import permutations
 from yal.io import *
 from yal.util import *
-from yal.grid import *
+from yal.grid_old import *
 from yal.graph import *
 from yal.geo2d import *
 
