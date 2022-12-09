@@ -14,10 +14,7 @@ for line in sys.stdin.readlines():
         rope[0] += dir
         for i in range(1, len(rope)):
             diff = rope[i-1]-rope[i]
-
-            if abs(diff.x) == 2:
-                rope[i] += Point(sign(diff.x), sign(diff.y))
-            elif abs(diff.y) == 2:
+            if abs(diff.x) == 2 or abs(diff.y) == 2:
                 rope[i] += Point(sign(diff.x), sign(diff.y))
 
         tail_vis.add(rope[-1])
