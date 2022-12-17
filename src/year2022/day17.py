@@ -46,6 +46,7 @@ def simulate(num_rocks):
     p = 0
     i = 0
     while i < num_rocks:
+        # Detecting cyclic pattern; this worked on my input at least...
         if p == 1 and hofs == 0:
             hdiff = highest+1-lasth
             idiff = i-lasti
