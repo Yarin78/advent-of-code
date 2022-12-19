@@ -66,7 +66,7 @@ for line in sys.stdin.readlines():
     if blueprint_ix <= 3:
         gm2 = max_geode(0, 0, 0, 1, 0, 0, 32)
         print(f"BP {blueprint_ix} can produce {gm2} geodes in 32 minutes")
-        part2 *= gm
+        part2 *= gm2
         if blueprint_ix == 3:
             print("Part 2:", part2)
 
