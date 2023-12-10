@@ -47,10 +47,7 @@ loop_tiles.add(start)
 while cur != start:
     loop_tiles.add(cur)
     n = neighbors(cur)
-    if n[0] == last:
-        next = n[1]
-    else:
-        next = n[0]
+    next = n[1] if n[0] == last else n[0]
     last = cur
     cur = next
 
@@ -58,20 +55,12 @@ print(len(loop_tiles) // 2)
 
 part2 = 0
 for y in range(grid.ysize):
-    s = ""
-    inside = False
+    is_inside = False
     for x in range(grid.xsize):
         p = Point(x,y)
         c = grid.get(p)
         if p in loop_tiles and (c == '|' or c == '7' or c == 'F'):
-            inside = not inside
-        if p not in loop_tiles:
-            if inside:
-                s += 'I'
-            else:
-                s += '.'
-            part2 += inside
-        else:
-            s += '#'
+            is_inside = not is_inside
+        part2 += p not in loop_tiles and is_inside
 
 print(part2)
