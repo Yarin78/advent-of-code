@@ -42,8 +42,8 @@ for line in lines:
     count_conditions.cache_clear()
     part1 += count_conditions(0, -1, 0)
 
-    pattern = f"{pattern}?{pattern}?{pattern}?{pattern}?{pattern}"
-    groups = [*groups, *groups, *groups, *groups, *groups]
+    pattern = "?".join([pattern] * 5)
+    groups = groups * 5
 
     count_conditions.cache_clear()
     part2 += count_conditions(0, -1, 0)
