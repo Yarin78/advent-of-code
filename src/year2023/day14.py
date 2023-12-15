@@ -15,17 +15,16 @@ sort_dir = {
 }
 
 def tilt(grid: Grid, dir:Point):
-    o = sorted(grid.find('O'), key=sort_dir[dir])
-
-    for p in o:
-        grid.set(p, '.')
-
-    for p in o:
-        assert grid.get(p) == '.'
-        q = p
-        while grid.get_safe(q + dir) == '.':
-            q = q + dir
-        grid.set(q, 'O')
+    for p in grid.edge_points(dir):
+        last = p
+        while grid.is_within(p):
+            if grid.get(p) == 'O':
+                grid.set(p, '.')
+                grid.set(last, 'O')
+                last -= dir
+            elif grid.get(p) == '#':
+                last = p - dir
+            p -= dir
 
     return grid
 
@@ -46,7 +45,7 @@ seen = {}
 
 left = 1000000000
 while left > 0:
-    key = grid_key(grid)
+    key = grid.get_hash_key()
     if key in seen:
         left %= (seen[key] - left)
     seen[key] = left
