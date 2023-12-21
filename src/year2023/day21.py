@@ -17,23 +17,23 @@ grid.set(start, '.')
 assert grid.xsize == grid.ysize
 assert grid.xsize % 2 == 1
 
-dist = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), start)
+graph = grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.')
+dist = bfs(graph, start)
 
 print(sum(d % 2 == 0 and d <= 64 for p, d in dist.items()))
 
 STEPS = 26501365
 MOD = STEPS % 2
 
-dist_nw = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), Point(0,0))
-dist_ne = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), Point(grid.xsize-1,0))
-dist_sw = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), Point(0, grid.ysize-1))
-dist_se = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), Point(grid.xsize-1,grid.ysize-1))
+dist_nw = bfs(graph, Point(0,0))
+dist_ne = bfs(graph, Point(grid.xsize-1,0))
+dist_sw = bfs(graph, Point(0, grid.ysize-1))
+dist_se = bfs(graph, Point(grid.xsize-1,grid.ysize-1))
 
-dist_w = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), Point(0, start.y))
-dist_e = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), Point(grid.xsize-1, start.y))
-dist_n = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), Point(start.x, 0))
-dist_s = bfs(grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.'), Point(start.x, grid.ysize-1))
-
+dist_w = bfs(graph, Point(0, start.y))
+dist_e = bfs(graph, Point(grid.xsize-1, start.y))
+dist_n = bfs(graph, Point(start.x, 0))
+dist_s = bfs(graph, Point(start.x, grid.ysize-1))
 
 @functools.cache
 def count_it(n, d):
