@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import sys
 import os
+import graphviz
 
 from yal.io import *
 from yal.util import *
@@ -89,32 +90,30 @@ def go():
 
     return num_lo, num_hi
 
-def output_state(presses):
-    with open(f"tmp/state_{presses:04}.dot", "wt") as f:
-        f.write("digraph D {\n")
-        for m in modules.values():
+def show(presses):
+    dot = graphviz.Digraph()
+    for m in modules.values():
+        node_color="black"
+        if isinstance(m, FlipFlopModule):
+            if m.state:
+                node_color="green" # Hi
+            else:
+                node_color="red" # Low
+        elif isinstance(m, ConjunctionModule):
             node_color="black"
-            if isinstance(m, FlipFlopModule):
-                if m.state:
-                    node_color="green" # Hi
+        dot.node(m.id, color=node_color)
+
+        for dest in m.dest:
+            edge_color = "black"
+            if isinstance(modules.get(dest), ConjunctionModule):
+                if modules[dest].last_input[m.id]:
+                    edge_color = "green" # Hi
                 else:
-                    node_color="red" # Low
-            elif isinstance(m, ConjunctionModule):
-                node_color="black"
-            f.write(f"  {m.id} [color=\"{node_color}\"]\n")
+                    edge_color = "red" # Low
 
-            for dest in m.dest:
-                edge_color = "black"
-                if isinstance(modules.get(dest), ConjunctionModule):
-                    if modules[dest].last_input[m.id]:
-                        edge_color = "green" # Hi
-                    else:
-                        edge_color = "red" # Low
+            dot.edge(m.id, dest, color=edge_color)
+    dot.render(f'viz/state_{presses:04}', cleanup=True)
 
-                f.write(f"  {m.id} -> {dest} [color=\"{edge_color}\"]\n")
-        f.write("}\n")
-
-    os.system(f"dot -o viz/state_{presses:04}.png -Tpng tmp/state_{presses:04}.dot")
 
 sum_lo = 0
 sum_hi = 0
@@ -133,5 +132,6 @@ for mod in modules.values():
 while presses < 4096:
     presses += 1
     go()
+
 
 print(math.lcm(*rx_cycles.values()))
