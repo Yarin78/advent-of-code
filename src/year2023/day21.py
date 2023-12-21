@@ -35,20 +35,21 @@ dist_e = bfs(graph, Point(grid.xsize-1, start.y))
 dist_n = bfs(graph, Point(start.x, 0))
 dist_s = bfs(graph, Point(start.x, grid.ysize-1))
 
-@functools.cache
-def count_it(n, d):
-    cnt2 = 0
-    # This should be possible to do in a closed formula
-    for s in range(0, n+1):
-        if (s + d) % 2 == MOD:
-            cnt2 += s + 1
-    return cnt2
-
 def count_diag(d):
-    return count_it((STEPS - d - 2) // grid.xsize, d%2)
+    n = (STEPS - d - 2) // grid.xsize
+    # Count number of ways to sum two non-negative integers so the sum is _at most_ n
+    # and that the modulo of the final sum is either 0 or 1 depending on distance left
+    if d % 2 == MOD:
+        m = n // 2 + 1
+        return m*m
+    else:
+        m = (n+1) // 2
+        return m*(m+1)
 
 def count_straight(d):
     n = (STEPS - d - 1) // grid.xsize
+    # Count number of non-negative integers up to n
+    # so that the modulo is either 0 or 1 depending on distance left
     return (n + 1 + (d % 2 != MOD)) // 2
 
 IS_SAMPLE = grid.xsize == 11
