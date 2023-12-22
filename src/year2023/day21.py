@@ -17,10 +17,10 @@ grid.set(start, '.')
 assert grid.xsize == grid.ysize
 assert grid.xsize % 2 == 1
 
-graph = grid_graph(grid, lambda p, c: c == '.', lambda p1,c1,p2,c2: c1 == '.' and c2 == '.')
+graph = grid_graph(grid, ".")
 dist = bfs(graph, start)
 
-print(sum(d % 2 == 0 and d <= 64 for p, d in dist.items()))
+print(sum(d % 2 == 0 and d <= 64 for p, d in dist.items()))  # 3751
 
 STEPS = 26501365
 MOD = STEPS % 2
@@ -72,4 +72,4 @@ for p in grid.all_points():
         count += count_straight(min(dist_se[start] + dist_sw[p], dist_ne[start] + dist_nw[p], dist_e[start] + dist_w[p] if not IS_SAMPLE else INF))
         count += count_straight(min(dist_sw[start] + dist_nw[p], dist_se[start] + dist_ne[p], dist_s[start] + dist_n[p] if not IS_SAMPLE else INF))
 
-print(count)
+print(count)  # 619407349431167

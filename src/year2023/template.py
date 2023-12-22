@@ -1,4 +1,5 @@
 import sys
+from dataclasses import dataclass
 from queue import Queue
 from collections import defaultdict
 from itertools import permutations
