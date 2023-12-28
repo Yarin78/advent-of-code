@@ -2,7 +2,7 @@ import sys
 from yal.io import *
 from yal.util import *
 from yal.grid import *
-from yal.graph import *
+from yal.nxgraph import *
 from yal.geo2d import *
 
 lines = [line.strip() for line in sys.stdin.readlines()]
@@ -18,22 +18,22 @@ assert grid.xsize == grid.ysize
 assert grid.xsize % 2 == 1
 
 graph = grid_graph(grid, ".")
-dist = bfs(graph, start)
+dist = nx.shortest_path_length(graph, start)
 
 print(sum(d % 2 == 0 and d <= 64 for p, d in dist.items()))  # 3751
 
 STEPS = 26501365
 MOD = STEPS % 2
 
-dist_nw = bfs(graph, Point(0,0))
-dist_ne = bfs(graph, Point(grid.xsize-1,0))
-dist_sw = bfs(graph, Point(0, grid.ysize-1))
-dist_se = bfs(graph, Point(grid.xsize-1,grid.ysize-1))
+dist_nw = nx.shortest_path_length(graph, Point(0,0))
+dist_ne = nx.shortest_path_length(graph, Point(grid.xsize-1,0))
+dist_sw = nx.shortest_path_length(graph, Point(0, grid.ysize-1))
+dist_se = nx.shortest_path_length(graph, Point(grid.xsize-1,grid.ysize-1))
 
-dist_w = bfs(graph, Point(0, start.y))
-dist_e = bfs(graph, Point(grid.xsize-1, start.y))
-dist_n = bfs(graph, Point(start.x, 0))
-dist_s = bfs(graph, Point(start.x, grid.ysize-1))
+dist_w = nx.shortest_path_length(graph, Point(0, start.y))
+dist_e = nx.shortest_path_length(graph, Point(grid.xsize-1, start.y))
+dist_n = nx.shortest_path_length(graph, Point(start.x, 0))
+dist_s = nx.shortest_path_length(graph, Point(start.x, grid.ysize-1))
 
 def count_diag(d):
     n = (STEPS - d - 2) // grid.xsize

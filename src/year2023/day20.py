@@ -6,7 +6,7 @@ import graphviz
 from yal.io import *
 from yal.util import *
 from yal.grid import *
-from yal.graph import *
+from yal.nxgraph import *
 from yal.geo2d import *
 
 lines = [line.strip() for line in sys.stdin.readlines()]

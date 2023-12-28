@@ -1,2 +1,2 @@
 #!/bin/bash
-python day23.py <day23.in
+python day25.py <day25.in
