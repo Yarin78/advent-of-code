@@ -18,8 +18,9 @@ FORCED = [
     # "###.####"
 ]
 
+@cache
 def scanline_merge_components(
-    previous_row: Tuple[Optional[int], ...], current_row: List[bool]
+    previous_row: Tuple[Optional[int], ...], current_row: Tuple[bool, ...]
 ) -> Tuple[List[Optional[int]], List[int], List[int]]:
     '''
     Helper function for merging components across two rows in a grid.
@@ -133,34 +134,18 @@ def valid_final_row(components: List[Optional[int]], up: List[bool]):
 
     return True
 
-def validate_up(row1: Tuple[Optional[int], ...], row2: List[Optional[int]], up: Tuple[bool, ...]):
+def validate_up(row1: Tuple[Optional[int], ...], row2: List[bool], up: Tuple[bool, ...], i: int):
     # Both edges of horizontal lines in row1 must either go up (up[x] set) or down (row2[x] set)
 
-    n = len(row1)
-    for i in range(n):
-        if row1[i] is None:
-            continue
-
-        if (i == 0 or row1[i-1] is None) and i+1 < n and row1[i+1] is not None:
-            if up[i] == (row2[i] is not None):
-                return False
-
-        if (i == n-1 or row1[i+1] is None) and i-1 >= 0 and row1[i-1] is not None:
-            if up[i] == (row2[i] is not None):
-                return False
-    return True
-
-def validate_up_single(row1: Tuple[Optional[int], ...], row2: List[bool], up: Tuple[bool, ...], i: int):
     if row1[i] is None:
         return True
 
-    assert i+1 < len(row1)
-
-    if (i == 0 or row1[i-1] is None) and row1[i+1] is not None:
+    n = len(row1)
+    if (i == 0 or row1[i-1] is None) and i+1 < n and row1[i+1] is not None:
         if up[i] == row2[i]:
             return False
 
-    if (row1[i+1] is None) and i-1 >= 0 and row1[i-1] is not None:
+    if (i == n-1 or row1[i+1] is None) and i-1 >= 0 and row1[i-1] is not None:
         if up[i] == row2[i]:
             return False
 
@@ -189,6 +174,9 @@ def store():
     all_solutions.append(current_grid[:])
 
 
+stat_rec_cnt = 0
+stat_num_valid_rows = 0
+
 @cache
 def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, ...], rows_left: int, row_num: int):
     if rows_left == 0:
@@ -203,27 +191,26 @@ def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, 
 
     def rec(x: int, row1_last3: int, row2_last3: int):
         nonlocal n, started
+        global stat_rec_cnt, stat_num_valid_rows
+
+        stat_rec_cnt += 1
 
         if not precalc_valid_patterns[row1_last3 * 8 + row2_last3]:
             return 0
-
-        if x > 1:
-            # Performance speedup only, detecting invalid patterns early
-            if not validate_up_single(components, current_row, up, x-2):
-                return 0
+        if x > 1 and not validate_up(components, current_row, up, x-2):
+            return 0
 
         if x == n:
             if not precalc_valid_patterns[((row1_last3 * 2) & 7) * 8 + ((row2_last3 * 2) & 7)]:
+                return 0
+            if not validate_up(components, current_row, up, x-1):
                 return 0
 
             if SHOW_SOLUTIONS or STORE_SOLUTIONS:
                 current_grid.append(''.join('#' if filled else '.' for filled in current_row))
 
-            merged_components, lost_components, _ = scanline_merge_components(components, current_row)
+            merged_components, lost_components, _ = scanline_merge_components(components, tuple(current_row))
             try:
-                if not validate_up(components, merged_components, up):
-                    return 0
-
                 if len(lost_components) > 0:
                     # Ensure we don't have multiple loops
                     return 0
@@ -243,6 +230,7 @@ def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, 
 
                     return 1
 
+                stat_num_valid_rows += 1
                 return count_grid_loops_rec(tuple(merged_components), tuple(new_up), rows_left - 1, row_num + 1)
             finally:
                 if SHOW_SOLUTIONS or STORE_SOLUTIONS:
@@ -302,7 +290,10 @@ def main(xsize, ysize):
     num_solutions = count_grid_loops(xsize, ysize)
     print("Number of solutions:", num_solutions)
     try:
-        print(count_grid_loops_rec.cache_info())
+        print(f"count_grid_loops_rec {count_grid_loops_rec.cache_info()}")
+        print(f"scanline_merge_components {scanline_merge_components.cache_info()}")
+        print("Recursion calls:", stat_rec_cnt)
+        print("Valid rows", stat_num_valid_rows)
     except:
         pass
 
@@ -318,16 +309,17 @@ def main(xsize, ysize):
     # 8x8     1188935
     # 8x9     6510243
     # 8x10   39576571
-    # 9x9    41749885  # cachesize: 11676, 0.92s user
+    # 9x9    41749885  # cachesize: 11676, 0.79s user
     # 9x10  303385827
     # 8x20  3350776906928379
-    # 10x10  2645126227  # cachesize: 34476, 3.03s user
-    # 11x11  341643017303  # cachesize: 100237, 11.36s user
-    # 12x12  82472721488013  # cachesize: 287978, 43.44s user
+    # 10x10  2645126227  # cachesize: 34476, 1.08s user
+    # 11x11  341643017303  # cachesize: 100237, 3.75s user
+    # 12x12  82472721488013  # cachesize: 287978, 13.02s user
 
     # Number of solutions for NxN grids for N=3..12:
     # 1, 13, 167, 2685, 50391, 1188935, 41749885, 2645126227, 341643017303, 82472721488013
 
 # symmetry_compare(7, 8)
 
+sys.setrecursionlimit(10000)
 main(int(sys.argv[1]), int(sys.argv[2]))
