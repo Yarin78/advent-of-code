@@ -285,6 +285,9 @@ def main(xsize, ysize):
     except:
         pass
 
+    # 3x3           1
+    # 4x4          13
+    # 5x5         167
     # 6x5         571
     # 6x6        2685
     # 7x5        1656
@@ -297,7 +300,12 @@ def main(xsize, ysize):
     # 9x9    41749885
     # 9x10  303385827
     # 8x20  3350776906928379
+    # 10x10  2645126227  # cachesize: 34476
+    # 11x11  341643017303  # cachesize: 100237
+    # 12x12  82472721488013  # cachesize: 287978
 
+    # Number of solutions for NxN grids for N=3..12:
+    # 1, 13, 167, 2685, 50391, 1188935, 41749885, 2645126227, 341643017303, 82472721488013
 
 # symmetry_compare(7, 8)
 
