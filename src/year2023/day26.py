@@ -230,7 +230,7 @@ def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, 
         try:
             if num_lost_components > 0:
                 # Ensure we don't have multiple loops
-                return 0
+                continue
 
             new_up = tuple(merged_components[i] is not None and components[i] is not None for i in range(n))
 
