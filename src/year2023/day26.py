@@ -150,6 +150,22 @@ def validate_up(row1: Tuple[Optional[int], ...], row2: List[Optional[int]], up: 
                 return False
     return True
 
+def validate_up_single(row1: Tuple[Optional[int], ...], row2: List[bool], up: Tuple[bool, ...], i: int):
+    if row1[i] is None:
+        return True
+
+    assert i+1 < len(row1)
+
+    if (i == 0 or row1[i-1] is None) and row1[i+1] is not None:
+        if up[i] == row2[i]:
+            return False
+
+    if (row1[i+1] is None) and i-1 >= 0 and row1[i-1] is not None:
+        if up[i] == row2[i]:
+            return False
+
+    return True
+
 current_grid = []
 all_solutions = []
 
@@ -190,6 +206,11 @@ def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, 
 
         if not precalc_valid_patterns[row1_last3 * 8 + row2_last3]:
             return 0
+
+        if x > 1:
+            # Performance speedup only, detecting invalid patterns early
+            if not validate_up_single(components, current_row, up, x-2):
+                return 0
 
         if x == n:
             if not precalc_valid_patterns[((row1_last3 * 2) & 7) * 8 + ((row2_last3 * 2) & 7)]:
@@ -297,12 +318,12 @@ def main(xsize, ysize):
     # 8x8     1188935
     # 8x9     6510243
     # 8x10   39576571
-    # 9x9    41749885
+    # 9x9    41749885  # cachesize: 11676, 0.92s user
     # 9x10  303385827
     # 8x20  3350776906928379
-    # 10x10  2645126227  # cachesize: 34476
-    # 11x11  341643017303  # cachesize: 100237
-    # 12x12  82472721488013  # cachesize: 287978
+    # 10x10  2645126227  # cachesize: 34476, 3.03s user
+    # 11x11  341643017303  # cachesize: 100237, 11.36s user
+    # 12x12  82472721488013  # cachesize: 287978, 43.44s user
 
     # Number of solutions for NxN grids for N=3..12:
     # 1, 13, 167, 2685, 50391, 1188935, 41749885, 2645126227, 341643017303, 82472721488013
