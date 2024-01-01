@@ -23,8 +23,8 @@ FORCED = None
 
 @cache
 def scanline_merge_components(
-    previous_row: Tuple[Optional[int], ...], current_row: Tuple[bool, ...]
-) -> Tuple[List[Optional[int]], List[int], List[int]]:
+    previous_row: Tuple[Optional[int], ...], current_row_str: str
+) -> Tuple[Tuple[Optional[int], ...], int]:
     '''
     Helper function for merging components across two rows in a grid.
     previous_row contains a list of components id's for each cell
@@ -44,6 +44,8 @@ def scanline_merge_components(
     Returns       ([0, 0, 0, N, N, N, 1, N, 0, N, N], [2], [1])
     '''
 
+    current_row = [c == '#' for c in current_row_str]
+
     assert len(previous_row) == len(current_row)
 
     comp_column_map = defaultdict(list)
@@ -54,13 +56,11 @@ def scanline_merge_components(
     n = len(previous_row)
     seen = [False] * n
     output: List[Optional[int]] = [None] * n
-    new_components = []
     current_comp = 0
 
     for i in range(n):
          if current_row[i] and not seen[i]:
             q = Queue()
-            new_component = True
             q.put(i)
             seen[i] = True
             while not q.empty():
@@ -73,18 +73,15 @@ def scanline_merge_components(
                     q.put(x-1)
                     seen[x-1] = True
                 if previous_row[x] is not None:
-                    new_component = False
                     for j in comp_column_map[previous_row[x]]:
                         if current_row[j] and not seen[j]:
                             q.put(j)
                             seen[j] = True
                     comp_column_map[previous_row[x]].clear()
 
-            if new_component:
-                new_components.append(current_comp)
             current_comp += 1
 
-    return (output, sorted(k for k, v in comp_column_map.items() if v), new_components)
+    return (tuple(output), len([k for k, v in comp_column_map.items() if v]))
 
 def valid_pattern_bitmask(row1: int, row2: int):
     # Certain patterns in any local 3x2 part of the grid are invalid
@@ -117,7 +114,7 @@ for i in range(8):
     for j in range(8):
         precalc_valid_patterns.append(valid_pattern_bitmask(i, j))
 
-def valid_final_row(components: List[Optional[int]], up: List[bool]):
+def valid_final_row(components: Tuple[Optional[int], ...], up: Tuple[bool, ...]):
     if 1 in components:
         return False
 
@@ -137,7 +134,7 @@ def valid_final_row(components: List[Optional[int]], up: List[bool]):
 
     return True
 
-def validate_up(row1: Tuple[Optional[int], ...], row2: List[bool], up: Tuple[bool, ...], i: int):
+def validate_up(row1: Tuple[Optional[int], ...], row2: str, up: Tuple[bool, ...], i: int):
     # Both edges of horizontal lines in row1 must either go up (up[x] set) or down (row2[x] set)
 
     if row1[i] is None:
@@ -145,11 +142,11 @@ def validate_up(row1: Tuple[Optional[int], ...], row2: List[bool], up: Tuple[boo
 
     n = len(row1)
     if (i == 0 or row1[i-1] is None) and i+1 < n and row1[i+1] is not None:
-        if up[i] == row2[i]:
+        if up[i] == (row2[i] == '#'):
             return False
 
     if (i == n-1 or row1[i+1] is None) and i-1 >= 0 and row1[i-1] is not None:
-        if up[i] == row2[i]:
+        if up[i] == (row2[i] == '#'):
             return False
 
     return True
@@ -178,13 +175,13 @@ def store():
 
 
 @cache
-def generate_row_patterns(components: Tuple[Optional[int], ...], up: Tuple[bool, ...], row_num: int) -> List[Tuple[bool, ...]]:
+def generate_row_patterns(components: Tuple[Optional[int], ...], up: Tuple[bool, ...], row_num: int) -> List[str]:
     n = len(components)
-    current_row = [False] * n
 
     patterns = []
 
-    def rec(x: int, row1_last3: int, row2_last3: int):
+    def rec(current_row: str, row1_last3: int, row2_last3: int):
+        x = len(current_row)
         if not precalc_valid_patterns[row1_last3 * 8 + row2_last3]:
             return
         if x > 1 and not validate_up(components, current_row, up, x-2):
@@ -196,7 +193,7 @@ def generate_row_patterns(components: Tuple[Optional[int], ...], up: Tuple[bool,
             if not validate_up(components, current_row, up, x-1):
                 return
 
-            patterns.append(tuple(current_row))
+            patterns.append(current_row)
         else:
             mask1 = ((row1_last3 * 2) & 7) + (components[x] is not None)
             mask2 = (row2_last3 * 2) & 7
@@ -204,13 +201,11 @@ def generate_row_patterns(components: Tuple[Optional[int], ...], up: Tuple[bool,
             c = FORCED[row_num][x] if FORCED and row_num < len(FORCED) and x < len(FORCED[row_num]) else '?'
 
             if c != '#':
-                current_row[x] = False
-                rec(x+1, mask1, mask2)
+                rec(current_row + ".", mask1, mask2)
             if c != '.':
-                current_row[x] = True
-                rec(x+1, mask1, mask2+1)
+                rec(current_row + "#", mask1, mask2+1)
 
-    rec(0, 0, 0)
+    rec("", 0, 0)
     return patterns
 
 
@@ -229,15 +224,15 @@ def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, 
 
     for current_row in generate_row_patterns(components, up, row_num):
         if SHOW_SOLUTIONS or STORE_SOLUTIONS:
-            current_grid.append(''.join('#' if filled else '.' for filled in current_row))
+            current_grid.append(current_row)
 
-        merged_components, lost_components, _ = scanline_merge_components(components, current_row)
+        merged_components, num_lost_components = scanline_merge_components(components, current_row)
         try:
-            if len(lost_components) > 0:
+            if num_lost_components > 0:
                 # Ensure we don't have multiple loops
                 return 0
 
-            new_up = [merged_components[i] is not None and components[i] is not None for i in range(n)]
+            new_up = tuple(merged_components[i] is not None and components[i] is not None for i in range(n))
 
             if started and valid_final_row(merged_components, new_up):
                 if SHOW_SOLUTIONS or STORE_SOLUTIONS:
@@ -251,8 +246,8 @@ def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, 
                         current_grid.pop()
 
                 num_solutions += 1
-
-            num_solutions += count_grid_loops_rec(tuple(merged_components), tuple(new_up), rows_left - 1, row_num + 1 if FORCED else row_num)
+            else:
+                num_solutions += count_grid_loops_rec(merged_components, new_up, rows_left - 1, row_num + 1 if FORCED else row_num)
         finally:
             if SHOW_SOLUTIONS or STORE_SOLUTIONS:
                 current_grid.pop()
@@ -323,8 +318,9 @@ def main(xsize, ysize):
     # 13x13  31312529515504513  # cachesize: 827233, 21.22s user
     # 14x14  17381378412860375479  # cachesize: 2365211, 74.20s user
 
-    # Number of solutions for NxN grids for N=3..12:
-    # 1, 13, 167, 2685, 50391, 1188935, 41749885, 2645126227, 341643017303, 82472721488013
+    # Number of solutions for NxN grids for N=3..14:
+    # 1, 13, 167, 2685, 50391, 1188935, 41749885, 2645126227, 341643017303, 82472721488013,
+    #   31312529515504513, 17381378412860375479
 
 # symmetry_compare(7, 8)
 
