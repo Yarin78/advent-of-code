@@ -2,21 +2,24 @@ import sys
 from functools import cache
 from collections import defaultdict
 from queue import Queue
-from typing import Tuple, List, Optional
+from typing import Iterable, Tuple, List, Optional
 
 SHOW_SOLUTIONS = False
 STORE_SOLUTIONS = False
 
 # Force cells in a grid. Use '#', '.' or '?'
-FORCED = [
-    # "########",
-    # "#......#",
-    # "#.####.#",
-    # "#.#..#.#",
-    # "#.#.##.#",
-    # "#.#.#..#",
-    # "###.####"
-]
+# Might make solution slower as less caching can be used
+FORCED = None
+
+# FORCED = [
+#     "########",
+#     "#......#",
+#     "#.####.#",
+#     "#.#..#.#",
+#     "#.#.##.#",
+#     "#.#.#..#",
+#     "###.####"
+# ]
 
 @cache
 def scanline_merge_components(
@@ -174,8 +177,42 @@ def store():
     all_solutions.append(current_grid[:])
 
 
-stat_rec_cnt = 0
-stat_num_valid_rows = 0
+@cache
+def generate_row_patterns(components: Tuple[Optional[int], ...], up: Tuple[bool, ...], row_num: int) -> List[Tuple[bool, ...]]:
+    n = len(components)
+    current_row = [False] * n
+
+    patterns = []
+
+    def rec(x: int, row1_last3: int, row2_last3: int):
+        if not precalc_valid_patterns[row1_last3 * 8 + row2_last3]:
+            return
+        if x > 1 and not validate_up(components, current_row, up, x-2):
+            return
+
+        if x == n:
+            if not precalc_valid_patterns[((row1_last3 * 2) & 7) * 8 + ((row2_last3 * 2) & 7)]:
+                return
+            if not validate_up(components, current_row, up, x-1):
+                return
+
+            patterns.append(tuple(current_row))
+        else:
+            mask1 = ((row1_last3 * 2) & 7) + (components[x] is not None)
+            mask2 = (row2_last3 * 2) & 7
+
+            c = FORCED[row_num][x] if FORCED and row_num < len(FORCED) and x < len(FORCED[row_num]) else '?'
+
+            if c != '#':
+                current_row[x] = False
+                rec(x+1, mask1, mask2)
+            if c != '.':
+                current_row[x] = True
+                rec(x+1, mask1, mask2+1)
+
+    rec(0, 0, 0)
+    return patterns
+
 
 @cache
 def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, ...], rows_left: int, row_num: int):
@@ -184,75 +221,43 @@ def count_grid_loops_rec(components: Tuple[Optional[int], ...], up: Tuple[bool, 
 
     global current_grid
 
+    n = len(components)
+
     started = any(x is not None for x in components)
 
-    n = len(components)
-    current_row = [False] * n
+    num_solutions = 0
 
-    def rec(x: int, row1_last3: int, row2_last3: int):
-        nonlocal n, started
-        global stat_rec_cnt, stat_num_valid_rows
+    for current_row in generate_row_patterns(components, up, row_num):
+        if SHOW_SOLUTIONS or STORE_SOLUTIONS:
+            current_grid.append(''.join('#' if filled else '.' for filled in current_row))
 
-        stat_rec_cnt += 1
-
-        if not precalc_valid_patterns[row1_last3 * 8 + row2_last3]:
-            return 0
-        if x > 1 and not validate_up(components, current_row, up, x-2):
-            return 0
-
-        if x == n:
-            if not precalc_valid_patterns[((row1_last3 * 2) & 7) * 8 + ((row2_last3 * 2) & 7)]:
-                return 0
-            if not validate_up(components, current_row, up, x-1):
+        merged_components, lost_components, _ = scanline_merge_components(components, current_row)
+        try:
+            if len(lost_components) > 0:
+                # Ensure we don't have multiple loops
                 return 0
 
-            if SHOW_SOLUTIONS or STORE_SOLUTIONS:
-                current_grid.append(''.join('#' if filled else '.' for filled in current_row))
+            new_up = [merged_components[i] is not None and components[i] is not None for i in range(n)]
 
-            merged_components, lost_components, _ = scanline_merge_components(components, tuple(current_row))
-            try:
-                if len(lost_components) > 0:
-                    # Ensure we don't have multiple loops
-                    return 0
-
-                new_up = [merged_components[i] is not None and components[i] is not None for i in range(n)]
-
-                if started and valid_final_row(merged_components, new_up):
-                    if SHOW_SOLUTIONS or STORE_SOLUTIONS:
-                        for _ in range(rows_left-1):
-                            current_grid.append('.' * n)
-                        if SHOW_SOLUTIONS:
-                            show()
-                        if STORE_SOLUTIONS:
-                            store()
-                        for _ in range(rows_left-1):
-                            current_grid.pop()
-
-                    return 1
-
-                stat_num_valid_rows += 1
-                return count_grid_loops_rec(tuple(merged_components), tuple(new_up), rows_left - 1, row_num + 1)
-            finally:
+            if started and valid_final_row(merged_components, new_up):
                 if SHOW_SOLUTIONS or STORE_SOLUTIONS:
-                    current_grid.pop()
+                    for _ in range(rows_left-1):
+                        current_grid.append('.' * n)
+                    if SHOW_SOLUTIONS:
+                        show()
+                    if STORE_SOLUTIONS:
+                        store()
+                    for _ in range(rows_left-1):
+                        current_grid.pop()
 
-        mask1 = ((row1_last3 * 2) & 7) + (components[x] is not None)
-        mask2 = (row2_last3 * 2) & 7
+                num_solutions += 1
 
-        ans = 0
+            num_solutions += count_grid_loops_rec(tuple(merged_components), tuple(new_up), rows_left - 1, row_num + 1 if FORCED else row_num)
+        finally:
+            if SHOW_SOLUTIONS or STORE_SOLUTIONS:
+                current_grid.pop()
 
-        c = FORCED[row_num][x] if row_num < len(FORCED) and x < len(FORCED[row_num]) else '?'
-
-        if c != '#':
-            current_row[x] = False
-            ans += rec(x+1, mask1, mask2)
-        if c != '.':
-            current_row[x] = True
-            ans += rec(x+1, mask1, mask2+1)
-
-        return ans
-
-    return rec(0, 0, 0)
+    return num_solutions
 
 def count_grid_loops(xsize, ysize):
     return count_grid_loops_rec(tuple([None] * xsize), tuple([False] * xsize), ysize, 0)
@@ -292,8 +297,8 @@ def main(xsize, ysize):
     try:
         print(f"count_grid_loops_rec {count_grid_loops_rec.cache_info()}")
         print(f"scanline_merge_components {scanline_merge_components.cache_info()}")
-        print("Recursion calls:", stat_rec_cnt)
-        print("Valid rows", stat_num_valid_rows)
+        print(f"generate_row_patterns {generate_row_patterns.cache_info()}")
+
     except:
         pass
 
@@ -309,12 +314,14 @@ def main(xsize, ysize):
     # 8x8     1188935
     # 8x9     6510243
     # 8x10   39576571
-    # 9x9    41749885  # cachesize: 11676, 0.79s user
     # 9x10  303385827
     # 8x20  3350776906928379
-    # 10x10  2645126227  # cachesize: 34476, 1.08s user
-    # 11x11  341643017303  # cachesize: 100237, 3.75s user
-    # 12x12  82472721488013  # cachesize: 287978, 13.02s user
+    # 9x9    41749885  # cachesize: 11676, 0.19s user
+    # 10x10  2645126227  # cachesize: 34476, 0.57s user
+    # 11x11  341643017303  # cachesize: 100237, 1.93s user
+    # 12x12  82472721488013  # cachesize: 287978, 6.53s user
+    # 13x13  31312529515504513  # cachesize: 827233, 21.22s user
+    # 14x14  17381378412860375479  # cachesize: 2365211, 74.20s user
 
     # Number of solutions for NxN grids for N=3..12:
     # 1, 13, 167, 2685, 50391, 1188935, 41749885, 2645126227, 341643017303, 82472721488013
