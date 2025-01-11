@@ -1,0 +1,2 @@
+#!/bin/bash
+python day7.py <day7.in
